@@ -1,14 +1,16 @@
-#!/usr/bin/python3
+#!/usr/local/bin/python3
 # -*- coding: utf-8 -*-
 
-import sys, random
+import sys
+import random
+import PyQt5.QtCore
 from PyQt5.QtWidgets import QWidget, QApplication
 from PyQt5.QtGui import QPainter, QColor, QBrush
 from PyQt5.QtCore import Qt, QBasicTimer
 
-import PyQt5.QtCore
 
 from ocean import *
+
 
 class OceanVisualizator(QWidget):
     def __init__(self, interval, ocean, window_height=1000, window_width=1000):
@@ -31,20 +33,34 @@ class OceanVisualizator(QWidget):
     def paintEvent(self, event):
         painter = QPainter()
         painter.begin(self)
-        
+
         for y in range(self.ocean.height):
             for x in range(self.ocean.width):
-                if type(ocean.field[y][x]) !=  EmptyCell:
-                    if type(ocean.field[y][x]) ==  Obstacle:
-                        painter.fillRect(x * self.cell_width, y * self.cell_heigth, self.cell_width, self.cell_heigth, PyQt5.QtCore.Qt.black)
-                    elif type(ocean.field[y][x]) ==  Victim:
+                if type(ocean.field[y][x]) != EmptyCell:
+                    if type(ocean.field[y][x]) == Obstacle:
+                        painter.fillRect(
+                            x * self.cell_width, y * self.cell_heigth,
+                            self.cell_width, self.cell_heigth,
+                            PyQt5.QtCore.Qt.black
+                        )
+                    elif type(ocean.field[y][x]) == Victim:
                         painter.setBrush(PyQt5.QtCore.Qt.green)
-                        painter.drawEllipse(x * self.cell_width, y * self.cell_heigth, self.cell_width, self.cell_heigth)
-                    elif type(ocean.field[y][x]) ==  Predator:
+                        painter.drawEllipse(
+                            x * self.cell_width, y * self.cell_heigth,
+                            self.cell_width, self.cell_heigth
+                        )
+                    elif type(ocean.field[y][x]) == Predator:
                         color = QColor(255, 0, 0)
-                        live_rate = (ocean.field[y][x].full_health - ocean.field[y][x].health) * 200 / ocean.field[y][x].full_health
+                        live_rate = (
+                            (ocean.field[y][x].full_health -
+                                ocean.field[y][x].health) *
+                            200 / ocean.field[y][x].full_health
+                        )
                         painter.setBrush(QBrush(color.darker(100 + live_rate)))
-                        painter.drawEllipse(x * self.cell_width, y * self.cell_heigth, self.cell_width, self.cell_heigth)
+                        painter.drawEllipse(
+                            x * self.cell_width, y * self.cell_heigth,
+                            self.cell_width, self.cell_heigth
+                        )
 
         painter.end()
 

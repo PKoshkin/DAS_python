@@ -21,7 +21,7 @@ class Cell(object):
 
     def make_turn(self):
         self.age += 1
-        if self.reproduction_period != None:
+        if self.reproduction_period is not None:
             if self.age % self.reproduction_period == 0:
                 try:
                     empty_neighbor = self.ocean.get_random_neighbor(self, EmptyCell)
@@ -38,6 +38,7 @@ class Cell(object):
 
     def born(self, cell):
         pass
+
 
 class Predator(Cell):
     def __init__(self, ocean, x, y, health=100, reproduction_period=150):
@@ -109,7 +110,7 @@ class Ocean(object):
         self.height = height
         self.turn = 0
 
-        if map_file == None:
+        if map_file is None:
             self.generate_random_field()
         else:
             self.make_empty_filed()
@@ -127,6 +128,12 @@ class Ocean(object):
             [EmptyCell(self, x, y) for x in range(self.width)]
             for y in range(self.height)
         ]
+
+    def type_counter(self, cell_type):
+        return sum([
+            sum([1 for cell in line if type(cell) == cell_type])
+            for line in self.field
+        ])
 
     def animate(self):
         for y in range(self.height):
@@ -155,8 +162,10 @@ class Ocean(object):
             for dx in range(-1, 2):
                 if dx == dy == 0:
                     continue
-                if type(self.field[(cell.y + dy) % self.height][(cell.x + dx) % self.width]) == cell_type:
-                    result.append(self.field[(cell.y + dy) % self.height][(cell.x + dx) % self.width])
+                y = (cell.y + dy) % self.height
+                x = (cell.x + dx) % self.width
+                if type(self.field[y][x]) == cell_type:
+                    result.append(self.field[y][x])
         return result
 
     def get_random_neighbor(self, cell, cell_type):
