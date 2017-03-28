@@ -88,13 +88,13 @@ class EmptyCell(Cell):
 
 def generate_random_cell(ocean, x, y):
     random_number = random.random()
-    if random_number < 0.99:
+    if random_number < ocean.empty_probability:
         return EmptyCell(ocean, x, y)
     else:
         random_number = random.random()
-        if random_number < 1 / 3:
+        if random_number < ocean.predator_probability:
             return Predator(ocean, x, y)
-        elif random_number > 2 / 3:
+        elif random_number > 1 - ocean.victim_probability:
             return Victim(ocean, x, y)
         else:
             return Obstacle(ocean, x, y)
@@ -105,10 +105,19 @@ class NeighborException(Exception):
 
 
 class Ocean(object):
-    def __init__(self, width, height, map_file=None):
+    def __init__(
+        self, width, height, map_file=None,
+        empty_probability=0.99, victim_probability=1/3, predator_probability=1/3
+    ):
         self.width = width
         self.height = height
         self.turn = 0
+
+        self.empty_probability = empty_probability # otherwise any other cell kind
+        self.victim_probability = victim_probability
+        self.predator_probability = predator_probability
+        # obstacle_probabilyty = 1 - victim_probability - predator_probability
+
 
         if map_file is None:
             self.generate_random_field()
@@ -131,7 +140,7 @@ class Ocean(object):
 
     def type_counter(self, cell_type):
         return sum([
-            sum([1 for cell in line if type(cell) == cell_type])
+            sum([1 for cell in line if isinstance(cell, cell_type)])
             for line in self.field
         ])
 
@@ -140,9 +149,13 @@ class Ocean(object):
             for x in range(self.width):
                 if type(self.field[y][x]) == EmptyCell:
                     random_number = random.random()
-                    if random_number > 0.99:
+                    if random_number > self.empty_probability:
                         random_number = random.random()
-                        if random_number < 1 / 2:
+                        predator_probability = (
+                            self.predator_probability /
+                            (self.predator_probability + self.victim_probability)
+                        )
+                        if random_number < predator_probability:
                             self.field[y][x] = Predator(self, x, y)
                         else:
                             self.field[y][x] = Victim(self, x, y)
@@ -175,8 +188,20 @@ class Ocean(object):
         return neighbors[random.randint(0, len(neighbors) - 1)]
 
     def make_turn(self):
-        for y in range(self.height):
-            for x in range(self.width):
-                self.field[y][x].make_turn()
-
+        predators = [
+            self.field[y][x]
+            for y in range(self.height)
+            for x in range(self.width)
+            if isinstance(self.field[y][x], Predator)
+        ]
+        for predator in predators:
+            predator.make_turn()
+        victims = [
+            self.field[y][x]
+            for y in range(self.height)
+            for x in range(self.width)
+            if isinstance(self.field[y][x], Victim)
+        ]
+        for victim in victims:
+            victim.make_turn()
         self.turn += 1
