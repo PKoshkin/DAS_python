@@ -113,11 +113,11 @@ class Ocean(object):
         self.height = height
         self.turn = 0
 
-        self.empty_probability = empty_probability # otherwise any other cell kind
+        # otherwise any other cell kind
+        self.empty_probability = empty_probability
         self.victim_probability = victim_probability
         self.predator_probability = predator_probability
         # obstacle_probabilyty = 1 - victim_probability - predator_probability
-
 
         if map_file is None:
             self.generate_random_field()
