@@ -2,6 +2,14 @@
 import random
 
 
+class NeighborException(Exception):
+    pass
+
+
+class ProbabilityException(Exception):
+    pass
+
+
 class Cell(object):
     def __init__(self, ocean, x, y, reproduction_period):
         self.ocean = ocean
@@ -86,38 +94,39 @@ class EmptyCell(Cell):
         super().__init__(ocean, x, y, None)
 
 
-def generate_random_cell(ocean, x, y):
+EPSILON = 0.0001
+
+
+def generate_random_cell(
+    ocean, x, y,
+    empty_probability=0.99, victim_probability=0.01/3,
+    predator_probability=0.01/3, obstacle_probability=0.01/3
+):
+    sum_probability = (
+        empty_probability +
+        predator_probability +
+        predator_probability +
+        obstacle_probability
+    )
+    if abs(sum_probability - 1) > EPSILON:
+        raise ProbabilityException()
+
     random_number = random.random()
-    if random_number < ocean.empty_probability:
+    if random_number < empty_probability:
         return EmptyCell(ocean, x, y)
+    elif random_number < empty_probability + predator_probability:
+        return Predator(ocean, x, y)
+    elif random_number < (sum_probability - obstacle_probability):
+        return Victim(ocean, x, y)
     else:
-        random_number = random.random()
-        if random_number < ocean.predator_probability:
-            return Predator(ocean, x, y)
-        elif random_number > 1 - ocean.victim_probability:
-            return Victim(ocean, x, y)
-        else:
-            return Obstacle(ocean, x, y)
-
-
-class NeighborException(Exception):
-    pass
+        return Obstacle(ocean, x, y)
 
 
 class Ocean(object):
-    def __init__(
-        self, width, height, map_file=None,
-        empty_probability=0.99, victim_probability=1/3, predator_probability=1/3
-    ):
+    def __init__(self, width, height, map_file=None):
         self.width = width
         self.height = height
         self.turn = 0
-
-        # otherwise any other cell kind
-        self.empty_probability = empty_probability
-        self.victim_probability = victim_probability
-        self.predator_probability = predator_probability
-        # obstacle_probabilyty = 1 - victim_probability - predator_probability
 
         if map_file is None:
             self.generate_random_field()
@@ -148,17 +157,7 @@ class Ocean(object):
         for y in range(self.height):
             for x in range(self.width):
                 if type(self.field[y][x]) == EmptyCell:
-                    random_number = random.random()
-                    if random_number > self.empty_probability:
-                        random_number = random.random()
-                        predator_probability = (
-                            self.predator_probability /
-                            (self.predator_probability + self.victim_probability)
-                        )
-                        if random_number < predator_probability:
-                            self.field[y][x] = Predator(self, x, y)
-                        else:
-                            self.field[y][x] = Victim(self, x, y)
+                    self.field[y][x] = generate_random_cell(self, x, y, 0.99, 0.01/2, 0.01/2, 0)
 
     def read_map(self, file_name):
         with open(file_name) as file:
